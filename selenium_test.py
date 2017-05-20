@@ -35,10 +35,7 @@ def rad_ua():#获取随机的浏览器UA标识
     ua = random.choice(ua_list)
     return ua
 
-
-     
-    ##利用PhantomJS来加载动态网页
-
+##利用PhantomJS来加载动态网页
 def downloader_html(url,up_num):##利用PhantomJS获取网页数据
     '''
     url        :要下载的页面url
@@ -98,12 +95,10 @@ def shopurl2(data,fenlei,city):##获取内容
                 shop_flag =2
         else:
             shop_flag = 1
-#     print 'shop_flag:',shop_flag
     for k in list_shop:
         shopinfo_scvlist=[]
         shopdata=[]
         i+=1
-        #poi-tile__head J-mtad-link
         if shop_flag ==0:#普通
             print "普通"
             shop_url = k.find('a',class_='poi-tile__head J-mtad-link').get('href')
@@ -238,7 +233,6 @@ def shopurl2(data,fenlei,city):##获取内容
                     img_name = whatsday()+'.png'
                 elif shop_imgurl.find('jpeg') != -1:
                     img_name = whatsday()+'.jpeg'
-                #img_name = whatsday()+'.jpg'
                 shopdata.append(img_name)#图片本地名字
                 print '图片本地名字：',img_name
                 
@@ -247,7 +241,6 @@ def shopurl2(data,fenlei,city):##获取内容
                
                 ##将商铺信息写入csv文件
                 writer_csv.writerows(shopinfo_scvlist)
-                #svae_csv(shopinfo_scvlist,writer)
                 print '写入数据成功！'
                 printf_logFile('写入数据成功！' )
             except Exception,e: 
@@ -321,7 +314,7 @@ def jiexi_zby(url,shop_flag):##获取周边游店铺详情
                 number = number[number.find('：')+1:len(number)]
                 number.replace(' ', '')
                 break           
-        #获取地区信息       http://hotel.meituan.com/beijing/beijing/c-jingjijiudian/page2?mtt=1.hotel%2Fdefault.0.0.j2u6xw4d
+        #获取地区信息       
         area = soup.find('span',attrs={'class':'deal-component-title-prefix'}).get_text()
         area = area[1:len(area)-1]#地区信息
        
@@ -400,7 +393,6 @@ def jiexi(url,shop_flag):##获取店铺详情
     proxies = abuyun()
     UA = rad_ua() ##从ua_list中随机取出一个字符串
     headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）
-    #data = requests.get(url, headers=headers,proxies=proxies)
     data = requests.get(url, headers=headers,proxies=proxies) ##这样服务器就会以为我们是真的浏览器了
     print data.status_code
     if data.status_code == 402:
@@ -413,7 +405,6 @@ def jiexi(url,shop_flag):##获取店铺详情
             UA = rad_ua() ##从self.user_agent_list中随机取出一个字符串（聪明的小哥儿一定发现了这是完整的User-Agent中：后面的一半段）
             headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）        
             data = requests.get(url, headers=headers,proxies=proxies) ##这样服务器就会以为我们是真的浏览器了
-            #data = requests.get(url,)
             print '.',
             
             if data.status_code==200:
@@ -443,15 +434,11 @@ def jiexi(url,shop_flag):##获取店铺详情
         if i!=0:
             #获取店铺名字
             shop_name = s.find('span',class_="title").get_text()
-            
             ##获取店铺地
             shop_address = s.find('span',class_="geo").get_text()
-            
             #获取联系方式
             shop_number = s.find_all('p',class_="under-title")  
-            #csvhead = ['城市','地区','店铺分类','店铺名称','地址','店铺url','电话','人均','店铺具体分类','商家店招图片url','图片本地名字'] 
             list_shopinfo = [['地区',area],['店铺名',shop_name],['地址',shop_address],['联系电话',shop_number[1].get_text()],['分类',sort]]     
-            #list_shopinfo = [['店铺名',shop_name],['地址',shop_address],['联系电话',shop_number[1].get_text()],['分类',sort]]
             printf_logFile("地区"+area+"   地址："+shop_address+"    联系电话："+shop_number[1].get_text()+'分类:'+sort1+'\\'+sort2+'\\'+sort3)
             return list_shopinfo
         else:
@@ -482,7 +469,6 @@ def dow_img(img_url,img_name):#下载指定链接的图片
         f = open(FILE_ROOT+'\\sz_shopimage\\'+img_name,'ab')   
     f.write(img.content)
     f.close()
-
 def ping():#判断网络是否联通
     UA = rad_ua() ##从ua_list中随机取出一个字符串
     headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）
@@ -506,7 +492,6 @@ if __name__ == '__main__':
         lines = line.replace(' ','').replace('\n','').split("=")
         conf[lines[0]] = lines[1]
     print '开始'  
-   
     # 代理服务器
     proxyHost = conf["proxyHost"]
     proxyPort = conf["proxyPort"] 
@@ -573,9 +558,7 @@ if __name__ == '__main__':
     # #获取分类列表
     cai = 0
     for g in range(len(listfenlei)):
-        #listfenlei[g][1].find('hotel')!=-1 and listfenlei[g][1].find('trip')==-1 and 
         if listfenlei[g][1].find('dianying')==-1:
-            ##listfenlei[g][1] 每个城市的小分类
             url_txt = listfenlei[g][0].encode("utf8")#分类中文
             url = listfenlei[g][1].encode("utf8")#分类url
             url= quote(url,'://')#对URL进行转码，防止中文造成url的打开错误
