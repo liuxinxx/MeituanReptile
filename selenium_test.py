@@ -1,4 +1,4 @@
-#coding:utf-8                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+﻿#coding:utf-8                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 from selenium import webdriver
 import time
 from bs4 import BeautifulSoup
@@ -9,8 +9,11 @@ import random
 import os
 from urllib import quote
 import csv
+import datetime
 import fileinput
 import codecs
+from Main import movie 
+from xpinyin import Pinyin
 def rad_ua():#获取随机的浏览器UA标识
     ua_list = [
                 "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1",
@@ -71,7 +74,7 @@ def next_url(data,city_Url):
         nurl =nurl[nurl.find('/')+1:len(nurl)]
         nurl =nurl[nurl.find('/'):len(nurl)]
         print 'nurl:',nurl 
-        next_page = city_Url+nurl
+        next_page = city_Url+'/category'+nurl
         return next_page
     except:        
         return '0'
@@ -447,12 +450,9 @@ def jiexi(url,shop_flag):##获取店铺详情
 def printf_logFile(str):##写入日志文件
     Log_FileName =FILE_ROOT+'\\sz_shopinfo_test.log'
     str = whatstime()+str+'\r\n'
-    write(str, Log_FileName, 1)    
+    write(str, Log_FileName, 1) 
 def whatsday():#获取时间，例如：2017_Apr_28_09_59_46.jpg,用来当做图片的name
-    #  时间格式
-    fmt = "%Y_%m_%d_%H_%M_%S"
-    timestr = time.strftime(fmt,time.localtime())
-    return timestr
+    return str(datetime.datetime.now()).replace('.', '').replace(' ', '').replace('-', '').replace(':', '')
 def whatstime(): 
     #  时间格式'%Y-%m-%d',time.localtime(time.time())('%Y-%m-%d %H:%M:%S'
     fmt = "[%Y-%m-%d  %H:%M:%S]: "
@@ -463,10 +463,10 @@ def dow_img(img_url,img_name):#下载指定链接的图片
     headers ={'User-Agent': rad_ua()}
     img = requests.get(img_url,headers=headers)
     try:
-        f = open(FILE_ROOT+'\\sz_shopimage\\'+img_name,'ab')
+        f = open(FILE_ROOT+'\\shop_image\\'+img_name,'ab')
     except Exception ,e:
-        os.makedirs(FILE_ROOT+'\\sz_shopimage\\')#创建目录
-        f = open(FILE_ROOT+'\\sz_shopimage\\'+img_name,'ab')   
+        os.makedirs(FILE_ROOT+'\\shop_image\\')#创建目录
+        f = open(FILE_ROOT+'\\shop_image\\'+img_name,'ab')   
     f.write(img.content)
     f.close()
 def ping():#判断网络是否联通
@@ -484,8 +484,11 @@ def getCity():##返回城市二维列表[0]url [1]城市名字
         lines=line.split("^") 
         cityUrl_list.append([lines[0],lines[1]])
     return cityUrl_list
+
 if __name__ == '__main__':
-    FILE = 'J:\\test\\'
+    CurrentPath = os.getcwd()##获取当先脚本的运行目录
+    
+    FILE = CurrentPath##所有文件的根目录
     city_Url = ''
     conf = {}
     for line in fileinput.input("..//..//abuyun.conf"):
@@ -498,42 +501,6 @@ if __name__ == '__main__':
     #阿布云代理隧道验证信息
     proxyUser = conf["proxyUser"]
     proxyPass = conf["proxyPass"]
-    city = raw_input('输入要抓取的城市 :')
-    cityFlag = 0
-    listCity = getCity()
-    for g in range(len(listCity)):
-        if listCity[g][1] == city:
-            cityFlag = 1
-            city_Url = listCity[g][0]
-            crty_file = city_Url[city_Url.find('//')+2:city_Url.find('.')] +"\\"           
-            print '找到该城市！'
-            break 
-    if  cityFlag==0:  
-        print '没有找到'          
-        exit(0)
-    FILE_ROOT = FILE+crty_file
-    print FILE_ROOT
-    try:
-        f = open(FILE_ROOT+'1.txt','ab')
-        f.close()
-    except Exception ,e:
-        os.makedirs(FILE_ROOT)#创建目录   
-    
-    print '创建csv文件'
-    printf_logFile('创建csv文件')
-    ##创建csv文件   
-    try:        
-        csvfile_name = FILE_ROOT+'\\sz_shop.csv'
-        csvfile = file(csvfile_name,'ab+')
-        csvfile.write(codecs.BOM_UTF8)
-        writer_csv = csv.writer(csvfile)
-        csvhead = ['城市','地区','店铺分类','店铺名称','地址','店铺url','电话','人均','店铺具体分类','商家店招图片url','图片本地名字']
-        writer_csv.writerow(csvhead)
-        print 'csv文件创建成功！'
-        printf_logFile('csv文件创建成功！')
-    except Exception,e:
-        print '写入CSV文件错误',Exception,":",e
-        printf_logFile('写入CSV文件错误'+Exception+":"+e)
     service_args = [
         "--proxy-type=http",
         "--proxy=%(host)s:%(port)s" % {
@@ -550,7 +517,53 @@ if __name__ == '__main__':
     #伪造浏览器UA标识，防止网站反爬虫
     ua =rad_ua()##获取浏览器UA
     dcap["phantomjs.page.settings.userAgent"] = ua
+    #,service_args=service_args 阿布云代理
     driver = webdriver.PhantomJS(desired_capabilities=dcap,executable_path=phantomjs_path,service_args=service_args)
+    city = raw_input('输入要抓取的城市 :')
+    cityFlag = 0
+    listCity = getCity()
+    crty_file = ''
+    for g in range(len(listCity)):
+        if listCity[g][1] == city:
+            cityFlag = 1
+            city_Url = listCity[g][0]      
+            print '找到该城市！'
+            p = Pinyin()
+            crty_file = movie.c_to_p(city)#将字符转
+            break 
+    if  cityFlag==0:  
+        print '没有找到'          
+        exit(0)
+    FILE_ROOT = FILE+"\\"+crty_file
+    print FILE_ROOT
+    try:
+        os.makedirs(FILE_ROOT)
+    except:
+        print
+    ##创建csv文件   
+    try:        
+        csvfile_name = FILE_ROOT+'\\shop.csv'
+        moviefile_name = FILE_ROOT+'\\shop_movie.csv'
+        moviefile = file(moviefile_name,'ab+')
+        csvfile = file(csvfile_name,'ab+')
+        csvfile.write(codecs.BOM_UTF8)
+        moviefile.write(codecs.BOM_UTF8)
+        writer_csv = csv.writer(csvfile)
+        mov_csv = csv.writer(moviefile)
+        csvhead = ['城市','地区','店铺分类','店铺名称','地址','店铺url','电话','人均','店铺具体分类','商家店招图片url','图片本地名字']
+        writer_csv.writerow(csvhead)
+        mov_csv.writerow(csvhead)
+        print 'csv文件创建成功！'
+        printf_logFile('csv文件创建成功！')
+    except Exception,e:
+        print '写入CSV文件错误',Exception,":",e
+        printf_logFile('写入CSV文件错误'+Exception+":"+e)
+    ###先获取电影院信息
+    print '创建csv文件'
+    printf_logFile('创建csv文件')
+#     movie.jiexi_movie(city,mov_csv,FILE_ROOT)
+    
+    
     soup = BeautifulSoup(downloader_html(city_Url,5),'lxml')
     listfenlei = fenlei(soup)
     print '获取商品列表成功！' ,len(listfenlei)
@@ -558,7 +571,8 @@ if __name__ == '__main__':
     # #获取分类列表
     cai = 0
     for g in range(len(listfenlei)):
-        if listfenlei[g][1].find('dianying')==-1:
+#         if listfenlei[g][1].find('dianying')==-1:
+        if listfenlei[g][1].find('xiuxianyule')!=-1:
             url_txt = listfenlei[g][0].encode("utf8")#分类中文
             url = listfenlei[g][1].encode("utf8")#分类url
             url= quote(url,'://')#对URL进行转码，防止中文造成url的打开错误

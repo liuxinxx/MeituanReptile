@@ -42,7 +42,6 @@ def abuyun():##返回代理
     for line in fileinput.input("..//..//abuyun.conf"):
         lines = line.replace(' ','').replace('\n','').split("=")
         conf[lines[0]] = lines[1]
-    print '开始'  
     # 代理服务器
     proxyHost = conf["proxyHost"]
     proxyPort = conf["proxyPort"] 
@@ -121,7 +120,7 @@ def downloader_html(url):
     UA = rad_ua() ##从ua_list中随机取出一个字符串
     headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）
     # ,proxies=proxies 阿布云代理
-    data = requests.get(url, headers=headers) ##这样服务器就会以为我们是真的浏览器了
+    data = requests.get(url, headers=headers,proxies=proxies) ##这样服务器就会以为我们是真的浏览器了
     print data 
     return data
 def c_to_p(city):
@@ -130,10 +129,16 @@ def c_to_p(city):
     pp =p.get_pinyin(chars=city,splitter='')
     return pp
 def movie_info(url):
+    qy= ''
+    number =''
+    shop_img_url = ''
+    print
+    print '-------------------------------------------------------'
+    print url
     proxies = abuyun()
     UA = rad_ua() ##从ua_list中随机取出一个字符串
     headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）
-    data = requests.get(url, headers=headers) ##这样服务器就会以为我们是真的浏览器了,proxies=proxies
+    data = requests.get(url, headers=headers,proxies=proxies) ##这样服务器就会以为我们是真的浏览器了
     print data.status_code
     if data.status_code == 402:
         os._exit(0)
@@ -144,7 +149,7 @@ def movie_info(url):
         while(True):            
             UA = rad_ua() ##从self.user_agent_list中随机取出一个字符串（聪明的小哥儿一定发现了这是完整的User-Agent中：后面的一半段）
             headers = {'User-Agent': UA}  ##构造成一个完整的User-Agent （UA代表的是上面随机取出来的字符串哦）        
-            data = requests.get(url, headers=headers) ##这样服务器就会以为我们是真的浏览器了,proxies=proxies
+            data = requests.get(url, headers=headers,proxies=proxies) ##这样服务器就会以为我们是真的浏览器了,proxies=proxies
             print '.',
              
             if data.status_code==200:
@@ -172,13 +177,14 @@ def movie_info(url):
     ##返回电话和店铺图片
     return qy,number,shop_img_url   
             
-def jiexi_movie(city):
+def jiexi_movie(city,mov_csv,FILE_ROOT):
     shopinfo_scvlist=[]
     shopdata=[]
     headers = {'User-Agent':"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"}
     print c_to_p(city)
     URL = 'https://i.meituan.com/?city='+c_to_p(city)
-    start_html = requests.get(URL,headers = headers)
+    proxies = abuyun()
+    start_html = requests.get(URL,headers = headers,proxies=proxies)
     soup = BeautifulSoup(start_html.text,"html.parser")
     maoyan = soup.find('a', attrs={'gaevent':'imt/homepage/category1/99'}).get('href')
     maoyan = 'https:'+maoyan
@@ -187,7 +193,7 @@ def jiexi_movie(city):
     n =0
     while(True):
         
-        my_html = requests.get('https://m.maoyan.com/imeituan/ajax/cinema?offset='+str(n)+'&stid_b=1&'+cs,headers = headers)
+        my_html = requests.get('https://m.maoyan.com/imeituan/ajax/cinema?offset='+str(n)+'&stid_b=1&'+cs,headers = headers,proxies=proxies)
         n+=20
         if len(my_html.text)<300:
             break
@@ -198,12 +204,12 @@ def jiexi_movie(city):
             shopdata = []
             shopdata.append(city)#店铺所在城市
             
-            data = movie_info('http://sz.meituan.com/shop/'+str(xx['poiId'])+'?mtt=')
+            data = movie_info('http://sz.meituan.com/shop/'+str(xx['poiId']))
             shopdata.append(data[0])#店铺地区
             shopdata.append('电影院')#店铺分类
             shopdata.append(xx['nm'].encode('utf-8'))#店铺名字
             shopdata.append(xx['addr'].encode('utf-8'))#店铺地址
-            shopdata.append('http://sz.meituan.com/shop/'+str(xx['poiId'])+'?mtt=')#店铺url
+            shopdata.append('http://sz.meituan.com/shop/'+str(xx['poiId']))#店铺url
             shopdata.append(str(data[1]))#联系方式
             shopdata.append(str(xx['price']))#人均
             shopdata.append(' ')#店铺具体分类
@@ -219,13 +225,16 @@ def jiexi_movie(city):
             shopinfo_scvlist.append(shopdata)
             dow_img(data[2],img_name,city)
             i+=1
+            mov_csv.writerow(shopdata)
             for key in range(len(shopdata)):
+                ti.printf_logFile(str(shopdata[key]), FILE_ROOT)
                 print shopdata[key]
 
 def dow_img(img_url,img_name,city):#下载指定链接的图片
     FILE_ROOT = c_to_p(city)
+    proxies = abuyun()
     headers ={'User-Agent': rad_ua()}
-    img = requests.get(img_url,headers=headers)
+    img = requests.get(img_url,headers=headers,proxies=proxies)
     try:
         f = open(FILE_ROOT+'\\sz_shopimage\\'+img_name,'ab')
     except Exception ,e:
@@ -233,10 +242,3 @@ def dow_img(img_url,img_name,city):#下载指定链接的图片
         f = open(FILE_ROOT+'\\sz_shopimage\\'+img_name,'ab')   
     f.write(img.content)
     f.close()         
-if __name__ == '__main__':
-    city = '平顶山'
-# http://sz.meituan.com/shop/17034#smh:bdw
-    jiexi_movie(city)
-#     print downloader_html('http://su.meituan.com/shop/1767607?mtt=').text
-#     st = movie_info('http://sz.meituan.com/shop/24305728?mtt=')
-#     print st

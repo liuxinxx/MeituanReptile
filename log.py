@@ -6,21 +6,24 @@ import re
 import json
 import time
 import datetime
-from Main import *
 class LOG(object):
-    
-    def printf_logFile(self,str):##写入日志文件
-        FILE_ROOT = CurrentPath = os.getcwd()##获取当先脚本的运行目录
-        Log_FileName =FILE_ROOT+'\\sz_shopinfo_test.log'
-        str = log.LOG.whatstime()+str+'\r\n'
-        log.LOG.write(str, Log_FileName, 1)    
-    def whatsday(self):#获取时间，例如：2017_Apr_28_09_59_46.jpg,用来当做图片的name
-        #  时间格式
-        fmt = "%Y_%m_%d_%H_%M_%S"
-        timestr = time.strftime(fmt,time.localtime())
+    def write(self,str,file_name,flag):#将制定的字符串写入指定的文件中，当标记flag为1时，代表追加写入，为2时代表清除源文件后写入
+        if flag == 1:
+            file_object = open(file_name, 'a')
+            file_object.write(str)
+            file_object.close()
+        if flag ==2:
+            file_object = open(file_name, 'wb')
+            file_object.write(str)
+            file_object.close()
+    def printf_logFile(self,str,file):##写入日志文件
+        Log_FileName =file+'\\shopinfo_movie.log'
+        str = self.whatstime()+str+'\r\n'
+        self.write(str, Log_FileName, 1)    
+    def whatsday(self):
         return str(datetime.datetime.now()).replace('.', '').replace(' ', '').replace('-', '').replace(':', '')
     def whatstime(self): 
         #  时间格式'%Y-%m-%d',time.localtime(time.time())('%Y-%m-%d %H:%M:%S'
         fmt = "[%Y-%m-%d  %H:%M:%S]: "
         timestr = time.strftime(fmt,time.localtime())
-        return str(datetime.datetime.now()).replace('.', '').replace(' ', '').replace('-', '').replace(':', '')
+        return timestr
